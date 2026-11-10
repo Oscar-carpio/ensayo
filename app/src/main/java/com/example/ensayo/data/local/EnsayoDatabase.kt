@@ -1,7 +1,5 @@
 package com.example.ensayo.data.local
 
-
-
 import androidx.room.Database
 import androidx.room.RoomDatabase
 

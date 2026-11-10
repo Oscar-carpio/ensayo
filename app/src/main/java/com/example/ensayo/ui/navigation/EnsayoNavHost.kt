@@ -17,7 +17,7 @@ fun EnsayoNavHost(modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
         startDestination = RepertorioRoute,
-        modifier = modifier,
+        modifier = modifier
     ) {
         composable<RepertorioRoute> { RepertorioScreen() }
     }

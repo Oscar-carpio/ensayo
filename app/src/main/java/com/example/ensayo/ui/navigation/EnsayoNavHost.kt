@@ -19,6 +19,6 @@ fun EnsayoNavHost(modifier: Modifier = Modifier) {
         startDestination = RepertorioRoute,
         modifier = modifier
     ) {
-        composable<RepertorioRoute> { RepertorioScreen() }
+        composable<RepertorioRoute> { RepertorioScreen(onSongClick = { }) }
     }
 }

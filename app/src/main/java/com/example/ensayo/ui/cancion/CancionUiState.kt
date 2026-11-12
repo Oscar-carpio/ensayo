@@ -1,6 +1,7 @@
 package com.example.ensayo.ui.cancion
 
 import com.example.ensayo.domain.chordpro.ChordLine
+import com.example.ensayo.domain.chordpro.Notation
 import com.example.ensayo.domain.model.Song
 
 sealed interface CancionUiState {
@@ -12,6 +13,7 @@ sealed interface CancionUiState {
         val song: Song,
         val lines: List<ChordLine>,
         val semitones: Int = 0,
-        val displayKey: String = song.musicalKey
+        val displayKey: String = song.musicalKey,
+        val notation: Notation = Notation.AMERICAN
     ) : CancionUiState
 }

@@ -4,16 +4,19 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.example.ensayo.domain.chordpro.Transposer
 import com.example.ensayo.domain.chordpro.parseChordPro
 import com.example.ensayo.domain.repository.PreferencesRepository
 import com.example.ensayo.domain.repository.SongRepository
 import com.example.ensayo.ui.navigation.CancionRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -23,25 +26,44 @@ class CancionViewModel @Inject constructor(
     private val preferences: PreferencesRepository
 ) : ViewModel() {
     private val songId = savedStateHandle.toRoute<CancionRoute>().id
+    private val semitones = MutableStateFlow(0)
 
-    val uiState: StateFlow<CancionUiState> = repository.observeSong(songId)
-        .map { song ->
+    val uiState: StateFlow<CancionUiState> =
+        combine(repository.observeSong(songId), semitones) { song, steps ->
             if (song == null) {
                 CancionUiState.NotFound
             } else {
-                CancionUiState.Success(song = song, lines = parseChordPro(song.content))
+                val content = Transposer.transposeChordPro(song.content, steps)
+                CancionUiState.Success(
+                    song = song,
+                    lines = parseChordPro(content),
+                    semitones = steps,
+                    displayKey = Transposer.transposeChord(song.musicalKey, steps)
+                )
             }
-        }
-        .stateIn(
+        }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = CancionUiState.Loading
         )
+
     val fontSize: StateFlow<Int> = preferences.fontSize.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = PreferencesRepository.DEFAULT_FONT_SIZE
     )
+
+    fun transposeUp() {
+        semitones.update { normalize(it + 1) }
+    }
+
+    fun transposeDown() {
+        semitones.update { normalize(it - 1) }
+    }
+
+    fun resetTranspose() {
+        semitones.value = 0
+    }
 
     fun increaseFontSize() {
         viewModelScope.launch { preferences.setFontSize(fontSize.value + 2) }
@@ -50,4 +72,7 @@ class CancionViewModel @Inject constructor(
     fun decreaseFontSize() {
         viewModelScope.launch { preferences.setFontSize(fontSize.value - 2) }
     }
+
+    // Mantiene el valor entre -5 y +6: subir 7 semitonos es lo mismo que bajar 5
+    private fun normalize(steps: Int): Int = (steps + 5).mod(12) - 5
 }

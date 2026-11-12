@@ -5,6 +5,13 @@ import com.example.ensayo.domain.model.Song
 
 sealed interface CancionUiState {
     data object Loading : CancionUiState
+
     data object NotFound : CancionUiState
-    data class Success(val song: Song, val lines: List<ChordLine>) : CancionUiState
+
+    data class Success(
+        val song: Song,
+        val lines: List<ChordLine>,
+        val semitones: Int = 0,
+        val displayKey: String = song.musicalKey
+    ) : CancionUiState
 }

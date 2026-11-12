@@ -18,4 +18,7 @@ interface SongDao {
 
     @Query("UPDATE songs SET deleted = 1, updatedAt = :timestamp WHERE id = :id")
     suspend fun markDeleted(id: String, timestamp: Long)
+
+    @Query("SELECT COUNT(*) FROM songs")
+    suspend fun count(): Int
 }

@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.example.ensayo.domain.chordpro.ChordNotation
+import com.example.ensayo.domain.chordpro.Notation
 import com.example.ensayo.domain.chordpro.Transposer
 import com.example.ensayo.domain.chordpro.parseChordPro
 import com.example.ensayo.domain.repository.PreferencesRepository
@@ -28,24 +30,30 @@ class CancionViewModel @Inject constructor(
     private val songId = savedStateHandle.toRoute<CancionRoute>().id
     private val semitones = MutableStateFlow(0)
 
-    val uiState: StateFlow<CancionUiState> =
-        combine(repository.observeSong(songId), semitones) { song, steps ->
-            if (song == null) {
-                CancionUiState.NotFound
-            } else {
-                val content = Transposer.transposeChordPro(song.content, steps)
-                CancionUiState.Success(
-                    song = song,
-                    lines = parseChordPro(content),
-                    semitones = steps,
-                    displayKey = Transposer.transposeChord(song.musicalKey, steps)
-                )
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = CancionUiState.Loading
-        )
+    val uiState: StateFlow<CancionUiState> = combine(
+        repository.observeSong(songId),
+        semitones,
+        preferences.notation
+    ) { song, steps, notation ->
+        if (song == null) {
+            CancionUiState.NotFound
+        } else {
+            val transposed = Transposer.transposeChordPro(song.content, steps)
+            val content = ChordNotation.convertChordPro(transposed, notation)
+            val key = Transposer.transposeChord(song.musicalKey, steps)
+            CancionUiState.Success(
+                song = song,
+                lines = parseChordPro(content),
+                semitones = steps,
+                displayKey = ChordNotation.convertChord(key, notation),
+                notation = notation
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = CancionUiState.Loading
+    )
 
     val fontSize: StateFlow<Int> = preferences.fontSize.stateIn(
         scope = viewModelScope,
@@ -63,6 +71,12 @@ class CancionViewModel @Inject constructor(
 
     fun resetTranspose() {
         semitones.value = 0
+    }
+
+    fun toggleNotation() {
+        val current = (uiState.value as? CancionUiState.Success)?.notation ?: return
+        val next = if (current == Notation.AMERICAN) Notation.LATIN else Notation.AMERICAN
+        viewModelScope.launch { preferences.setNotation(next) }
     }
 
     fun increaseFontSize() {

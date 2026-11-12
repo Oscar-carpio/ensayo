@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ensayo.domain.chordpro.Notation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +62,7 @@ fun CancionScreen(
             onTransposeDown = viewModel::transposeDown,
             onTransposeUp = viewModel::transposeUp,
             onResetTranspose = viewModel::resetTranspose,
+            onToggleNotation = viewModel::toggleNotation,
             modifier = Modifier.padding(innerPadding)
         )
     }
@@ -73,6 +75,7 @@ fun CancionContent(
     onTransposeDown: () -> Unit,
     onTransposeUp: () -> Unit,
     onResetTranspose: () -> Unit,
+    onToggleNotation: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (uiState) {
@@ -88,6 +91,7 @@ fun CancionContent(
             onTransposeDown = onTransposeDown,
             onTransposeUp = onTransposeUp,
             onResetTranspose = onResetTranspose,
+            onToggleNotation = onToggleNotation,
             modifier = modifier
         )
     }
@@ -100,6 +104,7 @@ private fun SongSheet(
     onTransposeDown: () -> Unit,
     onTransposeUp: () -> Unit,
     onResetTranspose: () -> Unit,
+    onToggleNotation: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val shift = if (state.semitones > 0) "+${state.semitones}" else "${state.semitones}"
@@ -108,6 +113,7 @@ private fun SongSheet(
     } else {
         "Tono: ${state.displayKey} ($shift)"
     }
+    val notationLabel = if (state.notation == Notation.LATIN) "Ver C-D-E" else "Ver Do-Re-Mi"
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
         item {
             Column {
@@ -120,8 +126,11 @@ private fun SongSheet(
                         TextButton(onClick = onResetTranspose) { Text("Original") }
                     }
                 }
-                state.song.bpm?.let {
-                    Text("$it BPM", style = MaterialTheme.typography.bodyMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    state.song.bpm?.let {
+                        Text("$it BPM", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    TextButton(onClick = onToggleNotation) { Text(notationLabel) }
                 }
                 Spacer(Modifier.height(16.dp))
             }

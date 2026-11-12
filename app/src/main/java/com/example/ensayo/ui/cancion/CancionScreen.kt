@@ -3,6 +3,7 @@ package com.example.ensayo.ui.cancion
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -26,8 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.ensayo.domain.chordpro.ChordLine
-import com.example.ensayo.domain.model.Song
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,13 +58,23 @@ fun CancionScreen(
         CancionContent(
             uiState = uiState,
             fontSize = fontSize,
+            onTransposeDown = viewModel::transposeDown,
+            onTransposeUp = viewModel::transposeUp,
+            onResetTranspose = viewModel::resetTranspose,
             modifier = Modifier.padding(innerPadding)
         )
     }
 }
 
 @Composable
-fun CancionContent(uiState: CancionUiState, fontSize: Int, modifier: Modifier = Modifier) {
+fun CancionContent(
+    uiState: CancionUiState,
+    fontSize: Int,
+    onTransposeDown: () -> Unit,
+    onTransposeUp: () -> Unit,
+    onResetTranspose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     when (uiState) {
         CancionUiState.Loading -> Box(modifier.fillMaxSize(), Alignment.Center) {
             CircularProgressIndicator()
@@ -73,28 +82,51 @@ fun CancionContent(uiState: CancionUiState, fontSize: Int, modifier: Modifier = 
         CancionUiState.NotFound -> Box(modifier.fillMaxSize(), Alignment.Center) {
             Text("Canción no encontrada")
         }
-        is CancionUiState.Success -> SongSheet(uiState.song, uiState.lines, fontSize, modifier)
+        is CancionUiState.Success -> SongSheet(
+            state = uiState,
+            fontSize = fontSize,
+            onTransposeDown = onTransposeDown,
+            onTransposeUp = onTransposeUp,
+            onResetTranspose = onResetTranspose,
+            modifier = modifier
+        )
     }
 }
 
 @Composable
 private fun SongSheet(
-    song: Song,
-    lines: List<ChordLine>,
+    state: CancionUiState.Success,
     fontSize: Int,
+    onTransposeDown: () -> Unit,
+    onTransposeUp: () -> Unit,
+    onResetTranspose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val info = listOfNotNull("Tono: ${song.musicalKey}", song.bpm?.let { "$it BPM" })
-        .joinToString(" · ")
+    val shift = if (state.semitones > 0) "+${state.semitones}" else "${state.semitones}"
+    val keyLabel = if (state.semitones == 0) {
+        "Tono: ${state.displayKey}"
+    } else {
+        "Tono: ${state.displayKey} ($shift)"
+    }
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
         item {
             Column {
-                Text(song.artist, style = MaterialTheme.typography.titleMedium)
-                Text(info, style = MaterialTheme.typography.bodyMedium)
+                Text(state.song.artist, style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onTransposeDown) { Text("−1") }
+                    Text(keyLabel, style = MaterialTheme.typography.bodyLarge)
+                    TextButton(onClick = onTransposeUp) { Text("+1") }
+                    if (state.semitones != 0) {
+                        TextButton(onClick = onResetTranspose) { Text("Original") }
+                    }
+                }
+                state.song.bpm?.let {
+                    Text("$it BPM", style = MaterialTheme.typography.bodyMedium)
+                }
                 Spacer(Modifier.height(16.dp))
             }
         }
-        items(lines) { line ->
+        items(state.lines) { line ->
             Column {
                 if (line.chords.isNotEmpty()) {
                     Text(

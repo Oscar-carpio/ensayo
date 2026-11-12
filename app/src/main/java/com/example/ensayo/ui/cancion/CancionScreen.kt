@@ -32,17 +32,23 @@ import com.example.ensayo.domain.model.Song
 @Composable
 fun CancionScreen(
     onBack: () -> Unit,
+    onEdit: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CancionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val title = (uiState as? CancionUiState.Success)?.song?.title ?: ""
+    val song = (uiState as? CancionUiState.Success)?.song
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(title) },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Volver") } }
+                title = { Text(song?.title ?: "") },
+                navigationIcon = { TextButton(onClick = onBack) { Text("Volver") } },
+                actions = {
+                    if (song != null) {
+                        TextButton(onClick = { onEdit(song.id) }) { Text("Editar") }
+                    }
+                }
             )
         }
     ) { innerPadding ->

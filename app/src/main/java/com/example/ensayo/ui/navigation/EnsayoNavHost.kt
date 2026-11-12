@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ensayo.ui.cancion.CancionScreen
+import com.example.ensayo.ui.editor.EditorScreen
 import com.example.ensayo.ui.repertorio.RepertorioScreen
 import kotlinx.serialization.Serializable
 
@@ -14,6 +15,9 @@ object RepertorioRoute
 
 @Serializable
 data class CancionRoute(val id: String)
+
+@Serializable
+data class EditorRoute(val id: String? = null)
 
 @Composable
 fun EnsayoNavHost(modifier: Modifier = Modifier) {
@@ -24,10 +28,19 @@ fun EnsayoNavHost(modifier: Modifier = Modifier) {
         modifier = modifier
     ) {
         composable<RepertorioRoute> {
-            RepertorioScreen(onSongClick = { id -> navController.navigate(CancionRoute(id)) })
+            RepertorioScreen(
+                onSongClick = { id -> navController.navigate(CancionRoute(id)) },
+                onAddClick = { navController.navigate(EditorRoute()) }
+            )
         }
         composable<CancionRoute> {
-            CancionScreen(onBack = { navController.popBackStack() })
+            CancionScreen(
+                onBack = { navController.popBackStack() },
+                onEdit = { id -> navController.navigate(EditorRoute(id)) }
+            )
+        }
+        composable<EditorRoute> {
+            EditorScreen(onDone = { navController.popBackStack() })
         }
     }
 }

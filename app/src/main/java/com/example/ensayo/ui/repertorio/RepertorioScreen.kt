@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
@@ -28,17 +29,26 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun RepertorioScreen(
     onSongClick: (String) -> Unit,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RepertorioViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    RepertorioContent(
-        uiState = uiState,
-        onQueryChange = viewModel::onQueryChange,
-        onKeySelected = viewModel::onKeySelected,
-        onSongClick = onSongClick,
-        modifier = modifier
-    )
+    Box(modifier = modifier.fillMaxSize()) {
+        RepertorioContent(
+            uiState = uiState,
+            onQueryChange = viewModel::onQueryChange,
+            onKeySelected = viewModel::onKeySelected,
+            onSongClick = onSongClick,
+            modifier = Modifier.fillMaxSize()
+        )
+        ExtendedFloatingActionButton(
+            onClick = onAddClick,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+        ) {
+            Text("+ Nueva")
+        }
+    }
 }
 
 @Composable

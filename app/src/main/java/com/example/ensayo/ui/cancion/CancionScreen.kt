@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ensayo.domain.chordpro.ChordLine
@@ -37,6 +38,7 @@ fun CancionScreen(
     viewModel: CancionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
     val song = (uiState as? CancionUiState.Success)?.song
     Scaffold(
         modifier = modifier,
@@ -45,6 +47,8 @@ fun CancionScreen(
                 title = { Text(song?.title ?: "") },
                 navigationIcon = { TextButton(onClick = onBack) { Text("Volver") } },
                 actions = {
+                    TextButton(onClick = viewModel::decreaseFontSize) { Text("A−") }
+                    TextButton(onClick = viewModel::increaseFontSize) { Text("A+") }
                     if (song != null) {
                         TextButton(onClick = { onEdit(song.id) }) { Text("Editar") }
                     }
@@ -52,12 +56,16 @@ fun CancionScreen(
             )
         }
     ) { innerPadding ->
-        CancionContent(uiState = uiState, modifier = Modifier.padding(innerPadding))
+        CancionContent(
+            uiState = uiState,
+            fontSize = fontSize,
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 }
 
 @Composable
-fun CancionContent(uiState: CancionUiState, modifier: Modifier = Modifier) {
+fun CancionContent(uiState: CancionUiState, fontSize: Int, modifier: Modifier = Modifier) {
     when (uiState) {
         CancionUiState.Loading -> Box(modifier.fillMaxSize(), Alignment.Center) {
             CircularProgressIndicator()
@@ -65,12 +73,17 @@ fun CancionContent(uiState: CancionUiState, modifier: Modifier = Modifier) {
         CancionUiState.NotFound -> Box(modifier.fillMaxSize(), Alignment.Center) {
             Text("Canción no encontrada")
         }
-        is CancionUiState.Success -> SongSheet(uiState.song, uiState.lines, modifier)
+        is CancionUiState.Success -> SongSheet(uiState.song, uiState.lines, fontSize, modifier)
     }
 }
 
 @Composable
-private fun SongSheet(song: Song, lines: List<ChordLine>, modifier: Modifier = Modifier) {
+private fun SongSheet(
+    song: Song,
+    lines: List<ChordLine>,
+    fontSize: Int,
+    modifier: Modifier = Modifier
+) {
     val info = listOfNotNull("Tono: ${song.musicalKey}", song.bpm?.let { "$it BPM" })
         .joinToString(" · ")
     LazyColumn(modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp)) {
@@ -88,11 +101,16 @@ private fun SongSheet(song: Song, lines: List<ChordLine>, modifier: Modifier = M
                         text = line.chords,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
+                        fontSize = fontSize.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
                 if (line.lyrics.isNotBlank()) {
-                    Text(text = line.lyrics, fontFamily = FontFamily.Monospace)
+                    Text(
+                        text = line.lyrics,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = fontSize.sp
+                    )
                 } else if (line.chords.isEmpty()) {
                     Spacer(Modifier.height(12.dp))
                 }

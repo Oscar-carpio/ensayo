@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ensayo.ui.cancion.CancionScreen
+import com.example.ensayo.ui.directo.DirectoScreen
 import com.example.ensayo.ui.editor.EditorScreen
 import com.example.ensayo.ui.repertorio.RepertorioScreen
 import kotlinx.serialization.Serializable
@@ -15,6 +16,9 @@ object RepertorioRoute
 
 @Serializable
 data class CancionRoute(val id: String)
+
+@Serializable
+data class DirectoRoute(val id: String, val semitones: Int = 0)
 
 @Serializable
 data class EditorRoute(val id: String? = null)
@@ -36,8 +40,14 @@ fun EnsayoNavHost(modifier: Modifier = Modifier) {
         composable<CancionRoute> {
             CancionScreen(
                 onBack = { navController.popBackStack() },
-                onEdit = { id -> navController.navigate(EditorRoute(id)) }
+                onEdit = { id -> navController.navigate(EditorRoute(id)) },
+                onLiveMode = { id, semitones ->
+                    navController.navigate(DirectoRoute(id, semitones))
+                }
             )
+        }
+        composable<DirectoRoute> {
+            DirectoScreen(onExit = { navController.popBackStack() })
         }
         composable<EditorRoute> {
             EditorScreen(onDone = { navController.popBackStack() })

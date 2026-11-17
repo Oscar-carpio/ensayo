@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -34,12 +35,14 @@ import com.example.ensayo.domain.chordpro.Notation
 fun CancionScreen(
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
+    onLiveMode: (String, Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CancionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
-    val song = (uiState as? CancionUiState.Success)?.song
+    val success = uiState as? CancionUiState.Success
+    val song = success?.song
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -63,6 +66,7 @@ fun CancionScreen(
             onTransposeUp = viewModel::transposeUp,
             onResetTranspose = viewModel::resetTranspose,
             onToggleNotation = viewModel::toggleNotation,
+            onLiveMode = { success?.let { onLiveMode(it.song.id, it.semitones) } },
             modifier = Modifier.padding(innerPadding)
         )
     }
@@ -76,6 +80,7 @@ fun CancionContent(
     onTransposeUp: () -> Unit,
     onResetTranspose: () -> Unit,
     onToggleNotation: () -> Unit,
+    onLiveMode: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (uiState) {
@@ -92,6 +97,7 @@ fun CancionContent(
             onTransposeUp = onTransposeUp,
             onResetTranspose = onResetTranspose,
             onToggleNotation = onToggleNotation,
+            onLiveMode = onLiveMode,
             modifier = modifier
         )
     }
@@ -105,6 +111,7 @@ private fun SongSheet(
     onTransposeUp: () -> Unit,
     onResetTranspose: () -> Unit,
     onToggleNotation: () -> Unit,
+    onLiveMode: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val shift = if (state.semitones > 0) "+${state.semitones}" else "${state.semitones}"
@@ -131,6 +138,9 @@ private fun SongSheet(
                         Text("$it BPM", style = MaterialTheme.typography.bodyMedium)
                     }
                     TextButton(onClick = onToggleNotation) { Text(notationLabel) }
+                }
+                Button(onClick = onLiveMode, modifier = Modifier.padding(top = 8.dp)) {
+                    Text("▶ Modo directo")
                 }
                 Spacer(Modifier.height(16.dp))
             }

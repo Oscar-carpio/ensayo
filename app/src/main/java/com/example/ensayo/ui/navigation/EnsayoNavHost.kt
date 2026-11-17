@@ -17,6 +17,9 @@ object RepertorioRoute
 data class CancionRoute(val id: String)
 
 @Serializable
+data class DirectoRoute(val id: String, val semitones: Int = 0)
+
+@Serializable
 data class EditorRoute(val id: String? = null)
 
 @Composable

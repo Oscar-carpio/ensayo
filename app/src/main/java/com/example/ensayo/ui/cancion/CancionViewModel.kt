@@ -4,10 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.example.ensayo.domain.chordpro.ChordNotation
 import com.example.ensayo.domain.chordpro.Notation
-import com.example.ensayo.domain.chordpro.Transposer
-import com.example.ensayo.domain.chordpro.parseChordPro
+import com.example.ensayo.domain.chordpro.renderChordPro
+import com.example.ensayo.domain.chordpro.renderKey
 import com.example.ensayo.domain.repository.PreferencesRepository
 import com.example.ensayo.domain.repository.SongRepository
 import com.example.ensayo.ui.navigation.CancionRoute
@@ -38,14 +37,11 @@ class CancionViewModel @Inject constructor(
         if (song == null) {
             CancionUiState.NotFound
         } else {
-            val transposed = Transposer.transposeChordPro(song.content, steps)
-            val content = ChordNotation.convertChordPro(transposed, notation)
-            val key = Transposer.transposeChord(song.musicalKey, steps)
             CancionUiState.Success(
                 song = song,
-                lines = parseChordPro(content),
+                lines = renderChordPro(song.content, steps, notation),
                 semitones = steps,
-                displayKey = ChordNotation.convertChord(key, notation),
+                displayKey = renderKey(song.musicalKey, steps, notation),
                 notation = notation
             )
         }

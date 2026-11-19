@@ -6,41 +6,61 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.ensayo.domain.chordpro.renderChordPro
 import com.example.ensayo.domain.chordpro.renderKey
+import com.example.ensayo.domain.model.SetlistItem
 import com.example.ensayo.domain.repository.PreferencesRepository
+import com.example.ensayo.domain.repository.SetlistRepository
 import com.example.ensayo.domain.repository.SongRepository
 import com.example.ensayo.ui.navigation.DirectoRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 @HiltViewModel
 class DirectoViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    repository: SongRepository,
+    private val songRepository: SongRepository,
+    private val setlistRepository: SetlistRepository,
     preferences: PreferencesRepository
 ) : ViewModel() {
     private val route = savedStateHandle.toRoute<DirectoRoute>()
 
+    // La cola: todo el setlist, o una lista de una sola canción. null = todavía cargando
+    private val queue: StateFlow<List<SetlistItem>?> = queueFlow()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    private val currentSongId = MutableStateFlow(route.id)
+
     val uiState: StateFlow<DirectoUiState> = combine(
-        repository.observeSong(route.id),
+        queue,
+        currentSongId,
         preferences.notation,
         preferences.fontSize
-    ) { song, notation, fontSize ->
-        if (song == null) {
-            DirectoUiState.NotFound
-        } else {
-            DirectoUiState.Success(
-                title = song.title,
-                displayKey = renderKey(song.musicalKey, route.semitones, notation),
-                lines = renderChordPro(song.content, route.semitones, notation),
-                fontSize = fontSize + LIVE_EXTRA_SIZE
-            )
+    ) { items, currentId, notation, fontSize ->
+        val index = items?.indexOfFirst { it.song.id == currentId } ?: -1
+        when {
+            items == null -> DirectoUiState.Loading
+            index < 0 -> DirectoUiState.NotFound
+            else -> {
+                val item = items[index]
+                DirectoUiState.Success(
+                    songId = item.song.id,
+                    title = item.song.title,
+                    displayKey = renderKey(item.song.musicalKey, item.semitones, notation),
+                    lines = renderChordPro(item.song.content, item.semitones, notation),
+                    fontSize = fontSize + LIVE_EXTRA_SIZE,
+                    position = index + 1,
+                    total = items.size,
+                    nextTitle = items.getOrNull(index + 1)?.song?.title
+                )
+            }
         }
     }.stateIn(
         scope = viewModelScope,
@@ -68,6 +88,30 @@ class DirectoViewModel @Inject constructor(
 
     fun slower() {
         _speed.update { (it - 1).coerceAtLeast(MIN_SPEED) }
+    }
+
+    fun next() = goTo(step = 1)
+
+    fun previous() = goTo(step = -1)
+
+    private fun goTo(step: Int) {
+        val target = queue.value?.songIdAt(currentSongId.value, step) ?: return
+        // Cada canción empieza parada: el músico decide cuándo arrancar
+        _isPlaying.value = false
+        currentSongId.value = target
+    }
+
+    private fun queueFlow(): Flow<List<SetlistItem>> {
+        val setlistId = route.setlistId
+        return if (setlistId != null) {
+            setlistRepository.observeItems(setlistId)
+        } else {
+            songRepository.observeSong(route.id).map { song ->
+                listOfNotNull(
+                    song?.let { SetlistItem(song = it, position = 0, semitones = route.semitones) }
+                )
+            }
+        }
     }
 
     companion object {

@@ -11,10 +11,13 @@ import com.example.ensayo.domain.repository.SongRepository
 import com.example.ensayo.ui.navigation.DirectoRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 @HiltViewModel
 class DirectoViewModel @Inject constructor(
@@ -45,8 +48,33 @@ class DirectoViewModel @Inject constructor(
         initialValue = DirectoUiState.Loading
     )
 
-    private companion object {
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
+    private val _speed = MutableStateFlow(DEFAULT_SPEED)
+    val speed: StateFlow<Int> = _speed.asStateFlow()
+
+    fun togglePlay() {
+        _isPlaying.update { !it }
+    }
+
+    fun pause() {
+        _isPlaying.value = false
+    }
+
+    fun faster() {
+        _speed.update { (it + 1).coerceAtMost(MAX_SPEED) }
+    }
+
+    fun slower() {
+        _speed.update { (it - 1).coerceAtLeast(MIN_SPEED) }
+    }
+
+    companion object {
         // En el escenario la letra va más grande que en la ficha
         const val LIVE_EXTRA_SIZE = 6
+        const val MIN_SPEED = 1
+        const val MAX_SPEED = 10
+        const val DEFAULT_SPEED = 3
     }
 }

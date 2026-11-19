@@ -19,6 +19,7 @@ import com.example.ensayo.ui.cancion.CancionScreen
 import com.example.ensayo.ui.directo.DirectoScreen
 import com.example.ensayo.ui.editor.EditorScreen
 import com.example.ensayo.ui.repertorio.RepertorioScreen
+import com.example.ensayo.ui.setlist.SetlistDetailScreen
 import com.example.ensayo.ui.setlists.SetlistsScreen
 import kotlinx.serialization.Serializable
 
@@ -27,6 +28,9 @@ object RepertorioRoute
 
 @Serializable
 object SetlistsRoute
+
+@Serializable
+data class SetlistDetailRoute(val id: String)
 
 @Serializable
 data class CancionRoute(val id: String)
@@ -79,8 +83,15 @@ fun EnsayoNavHost(modifier: Modifier = Modifier) {
                 )
             }
             composable<SetlistsRoute> {
-                // El detalle del setlist llega en el paso 3
-                SetlistsScreen(onSetlistClick = { })
+                SetlistsScreen(
+                    onSetlistClick = { id -> navController.navigate(SetlistDetailRoute(id)) }
+                )
+            }
+            composable<SetlistDetailRoute> {
+                SetlistDetailScreen(
+                    onBack = { navController.popBackStack() },
+                    onSongClick = { id -> navController.navigate(CancionRoute(id)) }
+                )
             }
             composable<CancionRoute> {
                 CancionScreen(

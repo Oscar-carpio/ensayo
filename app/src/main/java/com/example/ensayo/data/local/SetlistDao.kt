@@ -2,7 +2,9 @@ package com.example.ensayo.data.local
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
+import com.example.ensayo.domain.util.moved
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -40,4 +42,21 @@ interface SetlistDao {
         "SELECT COALESCE(MAX(position), -1) + 1 FROM setlist_songs WHERE setlistId = :setlistId"
     )
     suspend fun nextPosition(setlistId: String): Int
+
+    @Query(
+        """
+        SELECT setlist_songs.* FROM setlist_songs
+        INNER JOIN songs ON songs.id = setlist_songs.songId
+        WHERE setlist_songs.setlistId = :setlistId AND songs.deleted = 0
+        ORDER BY setlist_songs.position
+        """
+    )
+    suspend fun getEntries(setlistId: String): List<SetlistSongEntity>
+
+    // Todo o nada: si algo falla a mitad, no quedan posiciones a medio escribir
+    @Transaction
+    suspend fun move(setlistId: String, from: Int, to: Int) {
+        val reordered = getEntries(setlistId).moved(from, to)
+        upsertSongs(reordered.mapIndexed { index, entry -> entry.copy(position = index) })
+    }
 }

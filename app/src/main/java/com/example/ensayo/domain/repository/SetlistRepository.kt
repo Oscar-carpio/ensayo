@@ -18,4 +18,6 @@ interface SetlistRepository {
     suspend fun addSong(setlistId: String, songId: String, semitones: Int = 0)
 
     suspend fun removeSong(setlistId: String, songId: String)
+
+    suspend fun moveSong(setlistId: String, from: Int, to: Int)
 }

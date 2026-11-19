@@ -46,6 +46,10 @@ class OfflineSetlistRepository @Inject constructor(private val dao: SetlistDao) 
     override suspend fun removeSong(setlistId: String, songId: String) {
         dao.removeSong(setlistId, songId)
     }
+
+    override suspend fun moveSong(setlistId: String, from: Int, to: Int) {
+        dao.move(setlistId, from, to)
+    }
 }
 
 private fun SetlistEntity.toDomain() = Setlist(

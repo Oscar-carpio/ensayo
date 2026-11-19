@@ -51,4 +51,12 @@ class SetlistDetailViewModel @Inject constructor(
     fun removeSong(songId: String) {
         viewModelScope.launch { setlistRepository.removeSong(setlistId, songId) }
     }
+
+    fun moveUp(index: Int) {
+        viewModelScope.launch { setlistRepository.moveSong(setlistId, index, index - 1) }
+    }
+
+    fun moveDown(index: Int) {
+        viewModelScope.launch { setlistRepository.moveSong(setlistId, index, index + 1) }
+    }
 }

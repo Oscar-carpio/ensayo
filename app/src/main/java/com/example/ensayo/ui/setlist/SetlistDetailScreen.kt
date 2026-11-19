@@ -3,6 +3,7 @@ package com.example.ensayo.ui.setlist
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -66,6 +67,8 @@ fun SetlistDetailScreen(
             uiState = uiState,
             onSongClick = onSongClick,
             onRemove = viewModel::removeSong,
+            onMoveUp = viewModel::moveUp,
+            onMoveDown = viewModel::moveDown,
             modifier = Modifier.padding(innerPadding)
         )
     }
@@ -84,6 +87,8 @@ fun SetlistDetailContent(
     uiState: SetlistDetailUiState,
     onSongClick: (String) -> Unit,
     onRemove: (String) -> Unit,
+    onMoveUp: (Int) -> Unit,
+    onMoveDown: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (uiState) {
@@ -101,6 +106,7 @@ fun SetlistDetailContent(
                 )
             }
         } else {
+            val lastIndex = uiState.items.lastIndex
             LazyColumn(modifier = modifier.fillMaxSize()) {
                 itemsIndexed(uiState.items, key = { _, item -> item.song.id }) { index, item ->
                     Column {
@@ -109,7 +115,19 @@ fun SetlistDetailContent(
                             headlineContent = { Text(item.song.title) },
                             supportingContent = { Text(keyLabel(item)) },
                             trailingContent = {
-                                TextButton(onClick = { onRemove(item.song.id) }) { Text("Quitar") }
+                                Row {
+                                    TextButton(
+                                        onClick = { onMoveUp(index) },
+                                        enabled = index > 0
+                                    ) { Text("↑") }
+                                    TextButton(
+                                        onClick = { onMoveDown(index) },
+                                        enabled = index < lastIndex
+                                    ) { Text("↓") }
+                                    TextButton(onClick = { onRemove(item.song.id) }) {
+                                        Text("Quitar")
+                                    }
+                                }
                             },
                             modifier = Modifier.clickable { onSongClick(item.song.id) }
                         )

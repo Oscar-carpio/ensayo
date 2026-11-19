@@ -21,7 +21,7 @@ class OfflineSongRepository @Inject constructor(private val dao: SongDao) : Song
     override suspend fun delete(id: String) = dao.markDeleted(id, System.currentTimeMillis())
 }
 
-private fun SongEntity.toDomain() = Song(
+internal fun SongEntity.toDomain() = Song(
     id = id,
     title = title,
     artist = artist,

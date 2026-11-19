@@ -109,7 +109,9 @@ fun SetlistDetailContent(
                             headlineContent = { Text(item.song.title) },
                             supportingContent = { Text(keyLabel(item)) },
                             trailingContent = {
-                                TextButton(onClick = { onRemove(item.song.id) }) { Text("Quitar") }
+                                TextButton(onClick = { onRemove(item.song.id) }) {
+                                    Text("Quitar")
+                                }
                             },
                             modifier = Modifier.clickable { onSongClick(item.song.id) }
                         )

@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +64,8 @@ fun DirectoScreen(
         onFaster = viewModel::faster,
         onSlower = viewModel::slower,
         onReachedEnd = viewModel::pause,
+        onNext = viewModel::next,
+        onPrevious = viewModel::previous,
         onExit = onExit,
         modifier = modifier
     )
@@ -77,6 +80,8 @@ fun DirectoContent(
     onFaster: () -> Unit,
     onSlower: () -> Unit,
     onReachedEnd: () -> Unit,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit,
     onExit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -94,13 +99,16 @@ fun DirectoContent(
                 color = Color.White,
                 modifier = Modifier.align(Alignment.Center)
             )
-            is DirectoUiState.Success -> LiveSheet(
-                state = uiState,
-                isPlaying = isPlaying,
-                speed = speed,
-                onTogglePlay = onTogglePlay,
-                onReachedEnd = onReachedEnd
-            )
+            // key: al cambiar de canción el scroll vuelve arriba
+            is DirectoUiState.Success -> key(uiState.songId) {
+                LiveSheet(
+                    state = uiState,
+                    isPlaying = isPlaying,
+                    speed = speed,
+                    onTogglePlay = onTogglePlay,
+                    onReachedEnd = onReachedEnd
+                )
+            }
         }
         TextButton(
             onClick = onExit,
@@ -109,6 +117,17 @@ fun DirectoContent(
                 .padding(8.dp)
         ) {
             Text("Salir", color = Color.White)
+        }
+        if (uiState is DirectoUiState.Success && uiState.total > 1) {
+            SetlistControls(
+                position = uiState.position,
+                total = uiState.total,
+                onPrevious = onPrevious,
+                onNext = onNext,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(8.dp)
+            )
         }
         if (uiState is DirectoUiState.Success) {
             SpeedControls(
@@ -199,6 +218,16 @@ private fun LiveSheet(
                 }
             }
         }
+        state.nextTitle?.let { next ->
+            item {
+                Text(
+                    text = "Siguiente: $next",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 32.dp)
+                )
+            }
+        }
     }
 }
 
@@ -226,6 +255,30 @@ private fun SpeedControls(
                 color = LiveChordColor,
                 fontSize = 18.sp
             )
+        }
+    }
+}
+
+@Composable
+private fun SetlistControls(
+    position: Int,
+    total: Int,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .background(Color.DarkGray.copy(alpha = 0.85f), RoundedCornerShape(24.dp))
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TextButton(onClick = onPrevious, enabled = position > 1) {
+            Text("◀", color = if (position > 1) Color.White else Color.Gray)
+        }
+        Text("$position / $total", color = Color.White)
+        TextButton(onClick = onNext, enabled = position < total) {
+            Text("▶", color = if (position < total) Color.White else Color.Gray)
         }
     }
 }

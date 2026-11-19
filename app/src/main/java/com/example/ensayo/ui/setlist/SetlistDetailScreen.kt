@@ -40,6 +40,7 @@ import com.example.ensayo.domain.model.Song
 fun SetlistDetailScreen(
     onBack: () -> Unit,
     onSongClick: (String) -> Unit,
+    onLiveMode: (setlistId: String, songId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SetlistDetailViewModel = hiltViewModel()
 ) {
@@ -52,7 +53,15 @@ fun SetlistDetailScreen(
         topBar = {
             TopAppBar(
                 title = { Text(success?.setlist?.name ?: "") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("Volver") } }
+                navigationIcon = { TextButton(onClick = onBack) { Text("Volver") } },
+                actions = {
+                    if (success != null && success.items.isNotEmpty()) {
+                        val firstId = success.items.first().song.id
+                        TextButton(onClick = { onLiveMode(success.setlist.id, firstId) }) {
+                            Text("▶ Directo")
+                        }
+                    }
+                }
             )
         },
         floatingActionButton = {

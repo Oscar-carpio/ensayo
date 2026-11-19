@@ -39,7 +39,7 @@ data class CancionRoute(val id: String)
 data class EditorRoute(val id: String? = null)
 
 @Serializable
-data class DirectoRoute(val id: String, val semitones: Int = 0)
+data class DirectoRoute(val id: String, val semitones: Int = 0, val setlistId: String? = null)
 
 @Composable
 fun EnsayoNavHost(modifier: Modifier = Modifier) {
@@ -90,7 +90,10 @@ fun EnsayoNavHost(modifier: Modifier = Modifier) {
             composable<SetlistDetailRoute> {
                 SetlistDetailScreen(
                     onBack = { navController.popBackStack() },
-                    onSongClick = { id -> navController.navigate(CancionRoute(id)) }
+                    onSongClick = { id -> navController.navigate(CancionRoute(id)) },
+                    onLiveMode = { setlistId, songId ->
+                        navController.navigate(DirectoRoute(songId, setlistId = setlistId))
+                    }
                 )
             }
             composable<CancionRoute> {

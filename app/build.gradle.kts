@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 room {
     schemaDirectory("$projectDir/schemas")
